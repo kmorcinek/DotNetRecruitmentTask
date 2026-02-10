@@ -1,0 +1,36 @@
+using Contracts.Events;
+using Microsoft.Extensions.Logging;
+using Stock.Application.Commands;
+using Stock.Application.Validators;
+using Stock.Domain.Entities;
+using Stock.Domain.Repositories;
+using Wolverine;
+
+namespace Stock.Application.Services;
+
+public class AddInventoryHandler(
+    IInventoryRepository repository,
+    IMessageBus messageBus,
+    AddInventoryCommandValidator validator,
+    ILogger<AddInventoryHandler> logger)
+{
+    public async Task Handle(AddInventoryCommand command, string addedBy, CancellationToken cancellationToken)
+    {
+        await validator.Validate(command, cancellationToken);
+
+        var inventory = Inventory.Create(command.ProductId, command.Quantity, addedBy);
+
+        await repository.Insert(inventory, cancellationToken);
+
+        var inventoryEvent = new ProductInventoryAddedEvent(
+            Guid.NewGuid(),
+            command.ProductId,
+            command.Quantity,
+            DateTime.UtcNow
+        );
+
+        await messageBus.PublishAsync(inventoryEvent);
+
+        logger.LogInformation("Published ProductInventoryAddedEvent: Event={@Event}", inventoryEvent);
+    }
+}

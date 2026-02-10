@@ -1,0 +1,117 @@
+services:
+  postgres-product:
+    image: postgres:18.1-alpine
+    container_name: postgres-product
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - product-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  postgres-inventory:
+    image: postgres:18.1-alpine
+    container_name: postgres-inventory
+    environment:
+      POSTGRES_DB: inventorydb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "4317:4317"    # OTLP gRPC receiver
+      - "4318:4318"    # OTLP HTTP receiver
+    networks:
+      - app-network
+
+  productservice-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.ProductService
+    container_name: productservice-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Host=postgres-product;Port=5432;Database=productdb;Username=postgres;Password=postgres"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      Jwt__Secret: "your-super-secret-key-min-32-chars-long-for-security"
+      Jwt__Issuer: "ProductService"
+      Jwt__Audience: "ProductService"
+      OpenTelemetry__ServiceName: "ProductService"
+      OpenTelemetry__OtlpEndpoint: "http://jaeger:4317"
+    ports:
+      - "5001:80"
+    depends_on:
+      - postgres-product
+      - rabbitmq
+      - jaeger
+    networks:
+      - app-network
+
+  inventoryservice-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.InventoryService
+    container_name: inventoryservice-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Host=postgres-inventory;Port=5432;Database=inventorydb;Username=postgres;Password=postgres"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      ProductService__Url: "http://productservice-api"
+      Jwt__Secret: "your-super-secret-key-min-32-chars-long-for-security"
+      Jwt__Issuer: "InventoryService"
+      Jwt__Audience: "InventoryService"
+      OpenTelemetry__ServiceName: "StockService"
+      OpenTelemetry__OtlpEndpoint: "http://jaeger:4317"
+    ports:
+      - "5002:80"
+    depends_on:
+      - postgres-inventory
+      - rabbitmq
+      - productservice-api
+      - jaeger
+    networks:
+      - app-network
+
+volumes:
+  product-data:
+  inventory-data:
+  rabbitmq-data:
+
+networks:
+  app-network:
+    driver: bridge
