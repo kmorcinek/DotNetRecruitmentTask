@@ -4,6 +4,8 @@ WORKDIR /src
 # Copy solution and project files
 COPY NetRecruitmentTask.sln ./
 COPY src/Shared/Contracts/Contracts.csproj ./src/Shared/Contracts/
+COPY src/Shared/Abstractions/Abstractions.csproj ./src/Shared/Abstractions/
+COPY src/Shared/Infrastructure/Infrastructure.csproj ./src/Shared/Infrastructure/
 COPY src/Stock/Stock.API/Stock.API.csproj ./src/Stock/Stock.API/
 COPY src/Stock/Stock.Application/Stock.Application.csproj ./src/Stock/Stock.Application/
 COPY src/Stock/Stock.Domain/Stock.Domain.csproj ./src/Stock/Stock.Domain/
@@ -16,7 +18,7 @@ RUN dotnet restore src/Stock/Stock.API/Stock.API.csproj
 COPY . .
 
 # Build
-WORKDIR /src/src/Stock/Stock.API
+WORKDIR /src/Stock/Stock.API
 RUN dotnet build -c Release -o /app/build
 
 # Publish
