@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /app
 
 # Copy solution and project files
 COPY NetRecruitmentTask.sln ./
@@ -18,7 +18,7 @@ RUN dotnet restore src/Stock/Stock.API/Stock.API.csproj
 COPY . .
 
 # Build
-WORKDIR /src/Stock/Stock.API
+WORKDIR /app/src/Stock/Stock.API
 RUN dotnet build -c Release -o /app/build
 
 # Publish
