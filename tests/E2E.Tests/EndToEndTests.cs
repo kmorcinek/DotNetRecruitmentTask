@@ -195,8 +195,8 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             $"{InventoryServiceUrl}/inventory",
             addInventoryRequest);
 
-        // Assert - Currently returns 500 when product not found (could be improved to return 400)
-        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     private class ProductDto
