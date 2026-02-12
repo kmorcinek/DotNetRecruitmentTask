@@ -7,18 +7,17 @@ using E2E.Tests.Infrastructure;
 namespace E2E.Tests;
 
 [SuppressMessage("Usage", "xUnit1051:Calls to methods which accept CancellationToken should use TestContext.Current.CancellationToken")]
-public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<TestInfrastructure>
+public class EndToEndTests : IClassFixture<TestInfrastructure>
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _productClient = new();
+    private readonly HttpClient _inventoryClient = new();
 
     // Use locally running services for E2E tests
     private const string ProductServiceUrl = "http://localhost:5044";
     private const string InventoryServiceUrl = "http://localhost:5132";
 
-    [Fact]
-    public async Task Should_Update_Product_Amount_When_Inventory_Added()
+    public EndToEndTests(TestInfrastructure infrastructure)
     {
-        // Arrange - Generate JWT tokens
         var productToken = infrastructure.GenerateJwtToken(
             "ProductService",
             "ProductService",
@@ -29,6 +28,16 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             "InventoryService",
             new[] { "read", "write" });
 
+        _productClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", productToken);
+
+        _inventoryClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", inventoryToken);
+    }
+
+    [Fact]
+    public async Task Should_Update_Product_Amount_When_Inventory_Added()
+    {
         // Act 1: Create a product
         var createProductRequest = new
         {
@@ -37,17 +46,8 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             price = 99.99m
         };
 
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", productToken);
+        var createdProduct = await CreateProduct(createProductRequest);
 
-        var createProductResponse = await _httpClient.PostAsJsonAsync(
-            $"{ProductServiceUrl}/products",
-            createProductRequest);
-
-        Assert.Equal(HttpStatusCode.Created, createProductResponse.StatusCode);
-
-        var createdProduct = await createProductResponse.Content.ReadFromJsonAsync<ProductDto>();
-        Assert.NotNull(createdProduct);
         // Initial amount should be 0
         Assert.Equal(0, createdProduct.Amount);
 
@@ -61,46 +61,19 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             quantity = 25
         };
 
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", inventoryToken);
-
-        var addInventoryResponse = await _httpClient.PostAsJsonAsync(
-            $"{InventoryServiceUrl}/inventory",
-            addInventoryRequest);
-
-        Assert.Equal(HttpStatusCode.OK, addInventoryResponse.StatusCode);
+        await AddInventory(addInventoryRequest);
 
         // Act 3: Wait for event processing (increased for OpenTelemetry overhead)
         await Task.Delay(4000);
 
         // Assert: Verify product amount was updated
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", productToken);
-
-        var getProductResponse = await _httpClient.GetAsync(
-            $"{ProductServiceUrl}/products/{createdProduct.Id}");
-
-        Assert.Equal(HttpStatusCode.OK, getProductResponse.StatusCode);
-
-        var updatedProduct = await getProductResponse.Content.ReadFromJsonAsync<ProductDto>();
-        Assert.NotNull(updatedProduct);
+        var updatedProduct = await GetProduct(createdProduct.Id);
         Assert.Equal(25, updatedProduct.Amount);
     }
 
     [Fact]
     public async Task Should_Accumulate_Inventory_Amounts()
     {
-        // Arrange - Generate JWT tokens
-        var productToken = infrastructure.GenerateJwtToken(
-            "ProductService",
-            "ProductService",
-            new[] { "read", "write" });
-
-        var inventoryToken = infrastructure.GenerateJwtToken(
-            "InventoryService",
-            "InventoryService",
-            new[] { "read", "write" });
-
         // Create a product
         var createProductRequest = new
         {
@@ -109,62 +82,27 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             price = 149.99m
         };
 
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", productToken);
-
-        var createProductResponse = await _httpClient.PostAsJsonAsync(
-            $"{ProductServiceUrl}/products",
-            createProductRequest);
-
-        var createdProduct = await createProductResponse.Content.ReadFromJsonAsync<ProductDto>();
-        Assert.NotNull(createdProduct);
+        var createdProduct = await CreateProduct(createProductRequest);
 
         // Wait for ProductCreatedEvent to be consumed by InventoryService (increased for OpenTelemetry overhead)
         await Task.Delay(3000);
 
         // Add inventory multiple times
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", inventoryToken);
-
-        await _httpClient.PostAsJsonAsync(
-            $"{InventoryServiceUrl}/inventory",
-            new { productId = createdProduct.Id, quantity = 10 });
-
-        await _httpClient.PostAsJsonAsync(
-            $"{InventoryServiceUrl}/inventory",
-            new { productId = createdProduct.Id, quantity = 15 });
-
-        await _httpClient.PostAsJsonAsync(
-            $"{InventoryServiceUrl}/inventory",
-            new { productId = createdProduct.Id, quantity = 5 });
+        await AddInventory(new { productId = createdProduct.Id, quantity = 10 });
+        await AddInventory(new { productId = createdProduct.Id, quantity = 15 });
+        await AddInventory(new { productId = createdProduct.Id, quantity = 5 });
 
         // Wait for events to process (increased for OpenTelemetry overhead)
         await Task.Delay(5000);
 
         // Verify total amount
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", productToken);
-
-        var getProductResponse = await _httpClient.GetAsync(
-            $"{ProductServiceUrl}/products/{createdProduct.Id}");
-
-        var updatedProduct = await getProductResponse.Content.ReadFromJsonAsync<ProductDto>();
-        Assert.NotNull(updatedProduct);
+        var updatedProduct = await GetProduct(createdProduct.Id);
         Assert.Equal(30, updatedProduct.Amount); // 10 + 15 + 5 = 30
     }
 
     [Fact]
     public async Task Should_Validate_Product_Exists_Before_Adding_Inventory()
     {
-        // Arrange
-        var inventoryToken = infrastructure.GenerateJwtToken(
-            "InventoryService",
-            "InventoryService",
-            new[] { "read", "write" });
-
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", inventoryToken);
-
         // Act - Try to add inventory for non-existent product
         var addInventoryRequest = new
         {
@@ -172,12 +110,39 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
             quantity = 10
         };
 
-        var response = await _httpClient.PostAsJsonAsync(
-            $"{InventoryServiceUrl}/inventory",
-            addInventoryRequest);
+        var response = await AddInventoryRaw(addInventoryRequest);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private async Task<ProductDto> CreateProduct(object request)
+    {
+        var response = await _productClient.PostAsJsonAsync($"{ProductServiceUrl}/products", request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var product = await response.Content.ReadFromJsonAsync<ProductDto>();
+        Assert.NotNull(product);
+        return product;
+    }
+
+    private async Task AddInventory(object request)
+    {
+        var response = await _inventoryClient.PostAsJsonAsync($"{InventoryServiceUrl}/inventory", request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    private async Task<HttpResponseMessage> AddInventoryRaw(object request)
+    {
+        return await _inventoryClient.PostAsJsonAsync($"{InventoryServiceUrl}/inventory", request);
+    }
+
+    private async Task<ProductDto> GetProduct(Guid productId)
+    {
+        var response = await _productClient.GetAsync($"{ProductServiceUrl}/products/{productId}");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var product = await response.Content.ReadFromJsonAsync<ProductDto>();
+        Assert.NotNull(product);
+        return product;
     }
 
     private class ProductDto

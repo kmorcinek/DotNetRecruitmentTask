@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace E2E.Tests;
@@ -8,7 +9,7 @@ namespace E2E.Tests;
     "xUnit1051:Calls to methods which accept CancellationToken should use TestContext.Current.CancellationToken")]
 public class EndToEndAuthenticationTests
 {
-    private readonly HttpClient _httpClient = new();
+    private readonly HttpClient _productClient = new();
 
     private const string ProductServiceUrl = "http://localhost:5044";
 
@@ -23,9 +24,7 @@ public class EndToEndAuthenticationTests
             price = 50.00m
         };
 
-        var response = await _httpClient.PostAsJsonAsync(
-            $"{ProductServiceUrl}/products",
-            createProductRequest);
+        var response = await _productClient.PostAsJsonAsync<object>($"{ProductServiceUrl}/products", createProductRequest);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
