@@ -394,6 +394,3 @@ docker logs rabbitmq
 ## Future Enhancements
 
 - basic CQRS (command/query dispathers) instead of direct using StockService in Controller.
-- Add retry policies with Polly
-- Implement distributed tracing (OpenTelemetry)
-- Service-to-service authentication (not JWT from client)
