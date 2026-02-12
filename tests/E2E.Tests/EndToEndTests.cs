@@ -138,7 +138,8 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
 
     private static async Task WaitForInventoryProcessing()
     {
-        await Task.Delay(1000);
+        // Increased temporary for CI
+        await Task.Delay(3000);
     }
 
     private class ProductDto
