@@ -38,7 +38,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
     [Fact]
     public async Task Should_Update_Product_Amount_When_Inventory_Added()
     {
-        // Act 1: Create a product
+        // Arrange
         var createProductRequest = new
         {
             name = $"E2E Test Product {Guid.NewGuid()}",
@@ -53,12 +53,12 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
 
         await WaitForProductProcessing();
 
-        // Act 2: Add inventory for the product
+        // Act
         await AddInventory(createdProduct.Id, 25);
 
         await WaitForInventoryProcessing();
 
-        // Assert: Verify product amount was updated
+        // Assert
         var updatedProduct = await GetProduct(createdProduct.Id);
         Assert.Equal(25, updatedProduct.Amount);
     }
