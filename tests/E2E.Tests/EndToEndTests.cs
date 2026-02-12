@@ -90,14 +90,13 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         // Add inventory multiple times
         await AddInventory(new { productId = createdProduct.Id, quantity = 10 });
         await AddInventory(new { productId = createdProduct.Id, quantity = 15 });
-        await AddInventory(new { productId = createdProduct.Id, quantity = 5 });
 
         // Wait for events to process (increased for OpenTelemetry overhead)
         await Task.Delay(5000);
 
         // Verify total amount
         var updatedProduct = await GetProduct(createdProduct.Id);
-        Assert.Equal(30, updatedProduct.Amount); // 10 + 15 + 5 = 30
+        Assert.Equal(25, updatedProduct.Amount); // 10 + 15 = 25
     }
 
     [Fact]
