@@ -1,3 +1,4 @@
+using Abstractions.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Application.Commands;
@@ -6,7 +7,7 @@ namespace ProductService.API.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class ProductsController(Application.Services.CreateProductHandler createProductHandler, ILogger<ProductsController> logger)
+public class ProductsController(ICommandDispatcher commandDispatcher, Application.Services.CreateProductHandler createProductHandler, ILogger<ProductsController> logger)
     : ControllerBase
 {
     [HttpPost]
@@ -15,8 +16,7 @@ public class ProductsController(Application.Services.CreateProductHandler create
     {
         logger.LogInformation("Creating product: {Name}", command.Name);
 
-        // As next step it should be simple in-memory Command/Query Dispatcher
-        var productId = await createProductHandler.Handle(command, cancellationToken);
+        var productId = await commandDispatcher.Dispatch<CreateProductCommand, Guid>(command, cancellationToken);
         return CreatedAtAction(nameof(GetProduct), new { id = productId }, null);
     }
 

@@ -1,4 +1,5 @@
 using System.Text;
+using Infrastructure.Commands;
 using Infrastructure.ErrorHandling;
 using Wolverine;
 using Wolverine.RabbitMQ;
@@ -8,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Npgsql;
+using ProductService.Application.Commands;
+using ProductService.Application.Services;
 using ProductService.Domain.Repositories;
 using ProductService.Infrastructure.Data;
 using ProductService.Infrastructure.Repositories;
@@ -123,7 +126,13 @@ builder.Services.AddDbContext<ProductDbContext>(options =>
 
 // Register repositories and services
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<global::ProductService.Application.Services.CreateProductHandler>();
+
+// TODO: registering this way cause QueryDispatcher is not ready yet and need to inject it into ProductsController
+builder.Services.AddScoped<CreateProductHandler>();
+
+// Register Commands
+builder.Services
+    .AddCommands([typeof(CreateProductCommand).Assembly]);
 
 // Configure Wolverine with RabbitMQ
 builder.Host.UseWolverine(opts =>

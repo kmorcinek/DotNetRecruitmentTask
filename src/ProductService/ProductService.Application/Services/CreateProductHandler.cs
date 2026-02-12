@@ -1,3 +1,4 @@
+using Abstractions.Commands;
 using Contracts.Events;
 using ProductService.Application.Commands;
 using ProductService.Domain.Entities;
@@ -7,6 +8,7 @@ using Wolverine;
 namespace ProductService.Application.Services;
 
 public class CreateProductHandler(IProductRepository repository, IMessageBus messageBus)
+    : ICommandHandler<CreateProductCommand, Guid>
 {
     public async Task<Guid> Handle(CreateProductCommand command, CancellationToken cancellationToken)
     {
