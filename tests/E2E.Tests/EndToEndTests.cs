@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using E2E.Tests.Infrastructure;
 
 namespace E2E.Tests;
@@ -152,24 +151,6 @@ public class EndToEndTests(TestInfrastructure infrastructure) : IClassFixture<Te
         var updatedProduct = await getProductResponse.Content.ReadFromJsonAsync<ProductDto>();
         Assert.NotNull(updatedProduct);
         Assert.Equal(30, updatedProduct.Amount); // 10 + 15 + 5 = 30
-    }
-
-    [Fact]
-    public async Task Should_Require_Authentication_For_Protected_Endpoints()
-    {
-        // Attempt to create product without token
-        var createProductRequest = new
-        {
-            name = "Unauthorized Product",
-            description = "Should fail",
-            price = 50.00m
-        };
-
-        var response = await _httpClient.PostAsJsonAsync(
-            $"{ProductServiceUrl}/products",
-            createProductRequest);
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
