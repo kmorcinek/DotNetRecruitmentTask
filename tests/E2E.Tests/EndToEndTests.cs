@@ -57,8 +57,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         // Act 2: Add inventory for the product
         await AddInventory(createdProduct.Id, 25);
 
-        // Act 3: Wait for event processing (increased for OpenTelemetry overhead)
-        await Task.Delay(4000);
+        await WaitForInventoryProcessing();
 
         // Assert: Verify product amount was updated
         var updatedProduct = await GetProduct(createdProduct.Id);
@@ -85,8 +84,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         await AddInventory(createdProduct.Id, 10);
         await AddInventory(createdProduct.Id, 15);
 
-        // Wait for events to process (increased for OpenTelemetry overhead)
-        await Task.Delay(5000);
+        await WaitForInventoryProcessing();
 
         // Assert
         var updatedProduct = await GetProduct(createdProduct.Id);
@@ -133,6 +131,11 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         var product = await response.Content.ReadFromJsonAsync<ProductDto>();
         Assert.NotNull(product);
         return product;
+    }
+
+    private static async Task WaitForInventoryProcessing()
+    {
+        await Task.Delay(1000);
     }
 
     private class ProductDto
