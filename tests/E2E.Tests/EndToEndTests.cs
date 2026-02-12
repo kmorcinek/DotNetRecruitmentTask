@@ -133,7 +133,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
 
     private static async Task WaitForProductProcessing()
     {
-        await Task.Delay(2000);
+        await Task.Delay(1000);
     }
 
     private static async Task WaitForInventoryProcessing()
