@@ -51,8 +51,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         // Initial amount should be 0
         Assert.Equal(0, createdProduct.Amount);
 
-        // Wait for ProductCreatedEvent to be consumed by InventoryService
-        await Task.Delay(2000);
+        await WaitForProductProcessing();
 
         // Act 2: Add inventory for the product
         await AddInventory(createdProduct.Id, 25);
@@ -77,8 +76,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
 
         var createdProduct = await CreateProduct(createProductRequest);
 
-        // Wait for ProductCreatedEvent to be consumed by InventoryService (increased for OpenTelemetry overhead)
-        await Task.Delay(3000);
+        await WaitForProductProcessing();
 
         // Act
         await AddInventory(createdProduct.Id, 10);
@@ -131,6 +129,11 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         var product = await response.Content.ReadFromJsonAsync<ProductDto>();
         Assert.NotNull(product);
         return product;
+    }
+
+    private static async Task WaitForProductProcessing()
+    {
+        await Task.Delay(2000);
     }
 
     private static async Task WaitForInventoryProcessing()
