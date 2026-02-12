@@ -56,10 +56,11 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         // Act
         await AddInventory(createdProduct.Id, 25);
 
-        await WaitForInventoryProcessing();
-
         // Assert
-        var updatedProduct = await GetProduct(createdProduct.Id);
+        var updatedProduct = await WaitForConditionAsync(
+            () => GetProduct(createdProduct.Id),
+            p => p.Amount == 25);
+
         Assert.Equal(25, updatedProduct.Amount);
     }
 
@@ -82,11 +83,12 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         await AddInventory(createdProduct.Id, 10);
         await AddInventory(createdProduct.Id, 15);
 
-        await WaitForInventoryProcessing();
-
         // Assert
-        var updatedProduct = await GetProduct(createdProduct.Id);
-        Assert.Equal(25, updatedProduct.Amount); // 10 + 15 = 25
+        var updatedProduct = await WaitForConditionAsync(
+            () => GetProduct(createdProduct.Id),
+            p => p.Amount == 25); // 10 + 15 = 25
+
+        Assert.Equal(25, updatedProduct.Amount);
     }
 
     [Fact]
@@ -137,10 +139,34 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         await Task.Delay(3000);
     }
 
-    private static async Task WaitForInventoryProcessing()
+    private static async Task<T> WaitForConditionAsync<T>(
+        Func<Task<T>> getValue,
+        Func<T, bool> condition,
+        TimeSpan? timeout = null,
+        TimeSpan? pollingInterval = null)
     {
-        // Increased temporary for CI
-        await Task.Delay(3000);
+        var actualTimeout = timeout ?? TimeSpan.FromSeconds(5);
+        var interval = pollingInterval ?? TimeSpan.FromMilliseconds(500);
+        var endTime = DateTime.UtcNow.Add(actualTimeout);
+
+        while (DateTime.UtcNow < endTime)
+        {
+            var value = await getValue();
+            if (condition(value))
+            {
+                return value;
+            }
+
+            await Task.Delay(interval);
+        }
+
+        var lastValue = await getValue();
+        if (condition(lastValue))
+        {
+            return lastValue;
+        }
+
+        throw new TimeoutException($"Condition not met within {actualTimeout.TotalSeconds}s");
     }
 
     private class ProductDto
