@@ -55,13 +55,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         await Task.Delay(2000);
 
         // Act 2: Add inventory for the product
-        var addInventoryRequest = new
-        {
-            productId = createdProduct.Id,
-            quantity = 25
-        };
-
-        await AddInventory(addInventoryRequest);
+        await AddInventory(createdProduct.Id, 25);
 
         // Act 3: Wait for event processing (increased for OpenTelemetry overhead)
         await Task.Delay(4000);
@@ -74,7 +68,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
     [Fact]
     public async Task Should_Accumulate_Inventory_Amounts()
     {
-        // Create a product
+        // Arrange
         var createProductRequest = new
         {
             name = $"E2E Accumulation Test {Guid.NewGuid()}",
@@ -87,14 +81,14 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         // Wait for ProductCreatedEvent to be consumed by InventoryService (increased for OpenTelemetry overhead)
         await Task.Delay(3000);
 
-        // Add inventory multiple times
-        await AddInventory(new { productId = createdProduct.Id, quantity = 10 });
-        await AddInventory(new { productId = createdProduct.Id, quantity = 15 });
+        // Act
+        await AddInventory(createdProduct.Id, 10);
+        await AddInventory(createdProduct.Id, 15);
 
         // Wait for events to process (increased for OpenTelemetry overhead)
         await Task.Delay(5000);
 
-        // Verify total amount
+        // Assert
         var updatedProduct = await GetProduct(createdProduct.Id);
         Assert.Equal(25, updatedProduct.Amount); // 10 + 15 = 25
     }
@@ -103,13 +97,8 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
     public async Task Should_Validate_Product_Exists_Before_Adding_Inventory()
     {
         // Act - Try to add inventory for non-existent product
-        var addInventoryRequest = new
-        {
-            productId = Guid.NewGuid(), // Random non-existent ID
-            quantity = 10
-        };
-
-        var response = await AddInventoryRaw(addInventoryRequest);
+        var nonExistentProductId = Guid.NewGuid();
+        var response = await AddInventoryRaw(nonExistentProductId, 10);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -124,14 +113,16 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         return product;
     }
 
-    private async Task AddInventory(object request)
+    private async Task AddInventory(Guid productId, int quantity)
     {
+        var request = new { productId, quantity };
         var response = await _inventoryClient.PostAsJsonAsync($"{InventoryServiceUrl}/inventory", request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 
-    private async Task<HttpResponseMessage> AddInventoryRaw(object request)
+    private async Task<HttpResponseMessage> AddInventoryRaw(Guid productId, int quantity)
     {
+        var request = new { productId, quantity };
         return await _inventoryClient.PostAsJsonAsync($"{InventoryServiceUrl}/inventory", request);
     }
 
