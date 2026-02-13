@@ -1,6 +1,6 @@
 # .NET Distributed System - Recruitment Task
 
-A distributed warehouse/product management system demonstrating event-driven architecture, microservices patterns, JWT authentication, and idempotent message processing using .NET 8.
+A distributed warehouse/product management system demonstrating event-driven architecture, microservices patterns, JWT authentication, and idempotent message processing using .NET 10.
 
 ## Architecture Overview
 
@@ -20,7 +20,7 @@ This solution consists of two microservices communicating via RabbitMQ:
 - Triggers ProductService to update product amounts
 
 ### Technology Stack
-- **.NET 8** (latest LTS)
+- **.NET 10**
 - **Wolverine** with **RabbitMQ** (message bus)
 - **PostgreSQL 18.1-alpine** (separate database per service)
 - **Entity Framework Core** (ORM with code-first migrations)
@@ -90,7 +90,7 @@ net-recruitment-task/
 ## Getting Started
 
 ### Prerequisites
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### Running with Docker Compose

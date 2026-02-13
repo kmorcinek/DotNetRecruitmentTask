@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-.NET 8 distributed system demonstrating event-driven microservices architecture. Two services (ProductService and StockService) communicate via RabbitMQ with idempotent event processing.
+.NET 10 distributed system demonstrating event-driven microservices architecture. Two services (ProductService and StockService) communicate via RabbitMQ with idempotent event processing.
 
 ## Common Commands
 
