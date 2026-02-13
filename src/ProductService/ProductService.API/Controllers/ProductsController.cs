@@ -29,7 +29,7 @@ public class ProductsController(Application.Services.CreateProductHandler create
     }
 
     [HttpGet("{id}")]
-    [AllowAnonymous]
+    [Authorize(Roles = "read")]
     public async Task<IActionResult> GetProduct(Guid id, CancellationToken cancellationToken)
     {
         var product = await createProductHandler.GetProductById(id, cancellationToken);
