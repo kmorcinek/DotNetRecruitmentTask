@@ -21,7 +21,7 @@ public class EndToEndAuthorizationTests(TestInfrastructure infrastructure) : ICl
         var readOnlyToken = infrastructure.GenerateJwtToken(
             "ReadOnlyUser",
             "ReadOnlyUser",
-            new[] { "read" });
+            ["read"]);
 
         _productClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", readOnlyToken);
@@ -49,7 +49,7 @@ public class EndToEndAuthorizationTests(TestInfrastructure infrastructure) : ICl
         var writeOnlyToken = infrastructure.GenerateJwtToken(
             "WriteOnlyUser",
             "WriteOnlyUser",
-            new[] { "write" });
+            ["write"]);
 
         _productClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", writeOnlyToken);
