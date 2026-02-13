@@ -2,6 +2,10 @@
 
 A distributed warehouse/product management system demonstrating event-driven architecture, microservices patterns, JWT authentication, and idempotent message processing using .NET 10.
 
+## Inspiration
+
+Inspiration for implementing some concepts in C# taken from https://github.com/ArturWincenciak/Blef and https://github.com/devmentors/Confab
+
 ## Architecture Overview
 
 This solution consists of two microservices communicating via RabbitMQ:
