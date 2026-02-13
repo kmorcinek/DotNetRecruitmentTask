@@ -21,12 +21,12 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         var productToken = infrastructure.GenerateJwtToken(
             "ProductService",
             "ProductService",
-            new[] { "read", "write" });
+            ["read", "write"]);
 
         var inventoryToken = infrastructure.GenerateJwtToken(
             "InventoryService",
             "InventoryService",
-            new[] { "read", "write" });
+            ["read", "write"]);
 
         _productClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", productToken);

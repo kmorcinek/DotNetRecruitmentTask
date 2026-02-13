@@ -16,7 +16,7 @@ public class ProductRepository(ProductDbContext context) : IProductRepository
 
     public async Task<Product?> GetById(Guid id, CancellationToken cancellationToken)
     {
-        return await context.Products.FindAsync(new object[] { id }, cancellationToken);
+        return await context.Products.FindAsync([id], cancellationToken);
     }
 
     public async Task<List<Product>> GetAll(CancellationToken cancellationToken)
