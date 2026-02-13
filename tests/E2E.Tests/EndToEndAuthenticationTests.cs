@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace E2E.Tests;

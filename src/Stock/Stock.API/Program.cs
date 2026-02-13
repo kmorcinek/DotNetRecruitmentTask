@@ -11,6 +11,7 @@ using Npgsql;
 using Serilog;
 using Serilog.Enrichers.Span;
 using Stock.Application.Consumers;
+using Stock.Application.Services;
 using Stock.Application.Validators;
 using Stock.Domain;
 using Stock.Domain.Repositories;
@@ -128,7 +129,7 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<IProductReadModelRepository, ProductReadModelRepository>();
 builder.Services.AddScoped<IProductChecker, ProductReadModelRepository>();
-builder.Services.AddScoped<global::Stock.Application.Services.AddInventoryHandler>();
+builder.Services.AddScoped<AddInventoryHandler>();
 builder.Services.AddScoped<AddInventoryCommandValidator>();
 
 // Configure Wolverine with RabbitMQ
