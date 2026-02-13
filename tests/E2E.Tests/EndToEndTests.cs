@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -6,7 +5,6 @@ using E2E.Tests.Infrastructure;
 
 namespace E2E.Tests;
 
-[SuppressMessage("Usage", "xUnit1051:Calls to methods which accept CancellationToken should use TestContext.Current.CancellationToken")]
 public class EndToEndTests : IClassFixture<TestInfrastructure>
 {
     private readonly HttpClient _productClient = new();
