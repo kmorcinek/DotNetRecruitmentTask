@@ -16,8 +16,8 @@ public class ProductsController(Application.Services.CreateProductHandler create
         logger.LogInformation("Creating product: {Name}", command.Name);
 
         // As next step it should be simple in-memory Command/Query Dispatcher
-        var product = await createProductHandler.Handle(command, cancellationToken);
-        return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+        var productId = await createProductHandler.Handle(command, cancellationToken);
+        return CreatedAtAction(nameof(GetProduct), new { id = productId }, null);
     }
 
     [HttpGet]

@@ -8,7 +8,7 @@ namespace ProductService.Application.Services;
 
 public class CreateProductHandler(IProductRepository repository, IMessageBus messageBus)
 {
-    public async Task<Product> Handle(CreateProductCommand command, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateProductCommand command, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(command.Name))
             throw new ArgumentException("Product name is required", nameof(command.Name));
@@ -30,7 +30,7 @@ public class CreateProductHandler(IProductRepository repository, IMessageBus mes
 
         await messageBus.PublishAsync(productCreatedEvent);
 
-        return createdProduct;
+        return createdProduct.Id;
     }
 
     public async Task<List<Product>> GetAllProducts(CancellationToken cancellationToken)

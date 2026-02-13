@@ -46,19 +46,21 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
             price = 99.99m
         };
 
-        var createdProduct = await CreateProduct(createProductRequest);
-
-        // Initial amount should be 0
-        Assert.Equal(0, createdProduct.Amount);
+        var createdProductId = await CreateProduct(createProductRequest);
 
         await WaitForProductProcessing();
 
+        // // Initial amount should be 0
+        await WaitForConditionAsync(
+            () => GetProduct(createdProductId),
+            p => p.Amount == 0);
+
         // Act
-        await AddInventory(createdProduct.Id, 25);
+        await AddInventory(createdProductId, 25);
 
         // Assert
         var updatedProduct = await WaitForConditionAsync(
-            () => GetProduct(createdProduct.Id),
+            () => GetProduct(createdProductId),
             p => p.Amount == 25);
 
         Assert.Equal(25, updatedProduct.Amount);
@@ -75,17 +77,17 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
             price = 149.99m
         };
 
-        var createdProduct = await CreateProduct(createProductRequest);
+        var createdProductId = await CreateProduct(createProductRequest);
 
         await WaitForProductProcessing();
 
         // Act
-        await AddInventory(createdProduct.Id, 10);
-        await AddInventory(createdProduct.Id, 15);
+        await AddInventory(createdProductId, 10);
+        await AddInventory(createdProductId, 15);
 
         // Assert
         var updatedProduct = await WaitForConditionAsync(
-            () => GetProduct(createdProduct.Id),
+            () => GetProduct(createdProductId),
             p => p.Amount == 25); // 10 + 15 = 25
 
         Assert.Equal(25, updatedProduct.Amount);
@@ -102,13 +104,16 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private async Task<ProductDto> CreateProduct(object request)
+    private async Task<Guid> CreateProduct(object request)
     {
         var response = await _productClient.PostAsJsonAsync($"{ProductServiceUrl}/products", request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var product = await response.Content.ReadFromJsonAsync<ProductDto>();
-        Assert.NotNull(product);
-        return product;
+        Assert.NotNull(response.Headers.Location);
+
+        // Extract productId from Location header (e.g., "/products/guid")
+        var locationPath = response.Headers.Location.ToString();
+        var productId = Guid.Parse(locationPath.Split('/').Last());
+        return productId;
     }
 
     private async Task AddInventory(Guid productId, int quantity)
