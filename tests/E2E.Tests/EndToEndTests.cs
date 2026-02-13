@@ -118,7 +118,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
     {
         var request = new { productId, quantity };
         var response = await _inventoryClient.PostAsJsonAsync($"{InventoryServiceUrl}/inventory", request);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.EnsureSuccessStatusCode();
     }
 
     private async Task<HttpResponseMessage> AddInventoryRaw(Guid productId, int quantity)
@@ -130,7 +130,7 @@ public class EndToEndTests : IClassFixture<TestInfrastructure>
     private async Task<ProductDto> GetProduct(Guid productId)
     {
         var response = await _productClient.GetAsync($"{ProductServiceUrl}/products/{productId}");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        response.EnsureSuccessStatusCode();
         var product = await response.Content.ReadFromJsonAsync<ProductDto>();
         Assert.NotNull(product);
         return product;
