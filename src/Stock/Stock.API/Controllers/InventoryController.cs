@@ -1,3 +1,4 @@
+using Abstractions.Commands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Stock.API.Middleware;
@@ -7,20 +8,20 @@ namespace Stock.API.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class InventoryController(Application.Services.AddInventoryHandler addInventoryHandler, ILogger<InventoryController> logger)
+public class InventoryController(ICommandDispatcher commandDispatcher, ILogger<InventoryController> logger)
     : ControllerBase
 {
     [HttpPost]
     [Authorize(Roles = "write")]
-    public async Task<IActionResult> AddInventory([FromBody] AddInventoryCommand command, CancellationToken cancellationToken)
+    public async Task<IActionResult> AddInventory([FromBody] AddInventoryRequest request, CancellationToken cancellationToken)
     {
         var userId = User.GetUserId();
 
         logger.LogInformation("Adding inventory for product {ProductId}, quantity {Quantity}",
-            command.ProductId, command.Quantity);
+            request.ProductId, request.Quantity);
 
-        // As next step it should be simple in-memory Command/Query Dispatcher
-        await addInventoryHandler.Handle(command, userId, cancellationToken);
+        var command = new AddInventoryCommand(request.ProductId, request.Quantity, userId);
+        await commandDispatcher.Dispatch<AddInventoryCommand, Guid>(command, cancellationToken);
 
         return Ok();
     }

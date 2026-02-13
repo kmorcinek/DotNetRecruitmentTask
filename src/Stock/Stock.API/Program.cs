@@ -1,4 +1,5 @@
 using System.Text;
+using Infrastructure.Commands;
 using Infrastructure.ErrorHandling;
 using Wolverine;
 using Wolverine.RabbitMQ;
@@ -10,6 +11,7 @@ using OpenTelemetry.Trace;
 using Npgsql;
 using Serilog;
 using Serilog.Enrichers.Span;
+using Stock.Application.Commands;
 using Stock.Application.Consumers;
 using Stock.Application.Services;
 using Stock.Application.Validators;
@@ -129,8 +131,15 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped<IProductReadModelRepository, ProductReadModelRepository>();
 builder.Services.AddScoped<IProductChecker, ProductReadModelRepository>();
+
+// TODO: registering this way because QueryDispatcher is not ready yet and need to inject it into InventoryController
 builder.Services.AddScoped<AddInventoryHandler>();
+
 builder.Services.AddScoped<AddInventoryCommandValidator>();
+
+// Register Commands
+builder.Services
+    .AddCommands([typeof(AddInventoryCommand).Assembly]);
 
 // Configure Wolverine with RabbitMQ
 builder.Host.UseWolverine(opts =>

@@ -1,3 +1,4 @@
+using Abstractions.Commands;
 using Contracts.Events;
 using Microsoft.Extensions.Logging;
 using Stock.Application.Commands;
@@ -13,12 +14,13 @@ public class AddInventoryHandler(
     IMessageBus messageBus,
     AddInventoryCommandValidator validator,
     ILogger<AddInventoryHandler> logger)
+    : ICommandHandler<AddInventoryCommand, Guid>
 {
-    public async Task Handle(AddInventoryCommand command, string addedBy, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(AddInventoryCommand command, CancellationToken cancellationToken)
     {
         await validator.Validate(command, cancellationToken);
 
-        var inventory = Inventory.Create(command.ProductId, command.Quantity, addedBy);
+        var inventory = Inventory.Create(command.ProductId, command.Quantity, command.AddedBy);
 
         await repository.Insert(inventory, cancellationToken);
 
@@ -32,5 +34,7 @@ public class AddInventoryHandler(
         await messageBus.PublishAsync(inventoryEvent);
 
         logger.LogInformation("Published ProductInventoryAddedEvent: Event={@Event}", inventoryEvent);
+
+        return inventory.Id;
     }
 }
